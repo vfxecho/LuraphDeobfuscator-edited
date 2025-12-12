@@ -9,6 +9,8 @@ public interface IASTVisitor {
 
     public Node visit(Break node);
 
+    public Node visit(Continue node);
+
     public Node visit(Do node);
 
     public Node visit(Expression node);

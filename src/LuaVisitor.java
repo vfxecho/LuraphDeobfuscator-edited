@@ -57,6 +57,13 @@ public interface LuaVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitStmtBreak(LuaParser.StmtBreakContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code stmtContinue}
+	 * labeled alternative in {@link LuaParser#stat}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitStmtContinue(LuaParser.StmtContinueContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code stmtGoto}
 	 * labeled alternative in {@link LuaParser#stat}.
 	 * @param ctx the parse tree
@@ -126,6 +133,13 @@ public interface LuaVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitStmtLocalDecl(LuaParser.StmtLocalDeclContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code stmtCompoundAssign}
+	 * labeled alternative in {@link LuaParser#stat}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitStmtCompoundAssign(LuaParser.StmtCompoundAssignContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link LuaParser#ifstmt}.
 	 * @param ctx the parse tree

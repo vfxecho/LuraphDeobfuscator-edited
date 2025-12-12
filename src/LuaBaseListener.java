@@ -99,6 +99,18 @@ public class LuaBaseListener implements LuaListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterStmtContinue(LuaParser.StmtContinueContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitStmtContinue(LuaParser.StmtContinueContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterStmtGoto(LuaParser.StmtGotoContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -214,6 +226,18 @@ public class LuaBaseListener implements LuaListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitStmtLocalDecl(LuaParser.StmtLocalDeclContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterStmtCompoundAssign(LuaParser.StmtCompoundAssignContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitStmtCompoundAssign(LuaParser.StmtCompoundAssignContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

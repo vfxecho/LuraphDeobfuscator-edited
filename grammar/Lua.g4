@@ -62,6 +62,7 @@ stat
     | functioncall                                                                  #stmtFuncCall
     | label                                                                         #stmtLabel
     | 'break'                                                                       #stmtBreak
+    | 'continue'                                                                    #stmtContinue
     | 'goto' NAME                                                                   #stmtGoto
     | 'do' block 'end'                                                              #stmtDo
     | 'while' exp 'do' block 'end'                                                  #stmtWhile
@@ -72,6 +73,7 @@ stat
     | 'function' funcname funcbody                                                  #stmtFuncDef
     | 'local' 'function' NAME funcbody                                              #stmtLocalFuncDef
     | 'local' namelist ('=' explist)?                                               #stmtLocalDecl
+    | varlist ( '+=' | '-=' | '*=' | '/=' | '%=' | '^=' ) explist                   #stmtCompoundAssign
     ;
 
 ifstmt
@@ -232,6 +234,8 @@ operatorPower
     : '^';
 
 number
+    : INT | HEX | FLOAT | HEX_FLOAT | BIN
+    ;
      : INT | BIN | HEX | FLOAT | HEX_FLOAT
      ;
 
@@ -264,6 +268,16 @@ NESTED_STR
     ;
 
 BIN
+    : '0' [bB] BinDigit (BinDigit|'_')*
+    ;
+
+INT
+    : Digit (Digit|'_')*
+    ;
+
+HEX
+    : '0' [xX] HexDigit (HexDigit|'_')*
+    ;
      : '0' [bB] [01] ([01] | '_')*
      ;
 
@@ -304,6 +318,7 @@ EscapeSequence
     | DecimalEscape
     | HexEscape
     | UtfEscape
+    | '\\' .
     ;
 
 fragment
@@ -326,6 +341,11 @@ UtfEscape
 fragment
 Digit
     : [0-9]
+    ;
+
+fragment
+BinDigit
+    : [0-1]
     ;
 
 fragment
