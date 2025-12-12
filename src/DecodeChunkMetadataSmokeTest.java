@@ -2,11 +2,18 @@ import ASTNodes.Node;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 public class DecodeChunkMetadataSmokeTest {
     public static void main(String[] args) throws Exception {
         String fileName = args.length > 0 ? args[0] : "luraphtest.luac";
 
-        LuaLexer lexer = new LuaLexer(CharStreams.fromFileName(fileName));
+        String inputSource = new String(Files.readAllBytes(Paths.get(fileName)), StandardCharsets.UTF_8);
+        inputSource = LuaSourcePreprocessor.preprocess(inputSource);
+
+        LuaLexer lexer = new LuaLexer(CharStreams.fromString(inputSource, fileName));
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         LuaParser parser = new LuaParser(tokens);
         LuaParser.ChunkContext parseTree = parser.chunk();

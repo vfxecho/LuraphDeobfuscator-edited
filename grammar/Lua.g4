@@ -77,18 +77,15 @@ stat
     ;
 
 ifstmt
-    :
-    'if' exp 'then' block
+    : 'if' exp 'then' block
     ;
 
 elseifstmt
-    :
-    ('elseif' exp 'then' block)*
+    : ('elseif' exp 'then' block)*
     ;
 
 elsestmt
-    :
-    ('else' block)?
+    : ('else' block)?
     ;
 
 retstat
@@ -160,20 +157,6 @@ nameAndArgs
     : (':' NAME)? args
     ;
 
-/*
-var
-    : NAME | prefixexp '[' exp ']' | prefixexp '.' NAME
-    ;
-
-prefixexp
-    : var | functioncall | '(' exp ')'
-    ;
-
-functioncall
-    : prefixexp args | prefixexp ':' NAME args
-    ;
-*/
-
 args
     : '(' explist? ')' | tableconstructor | string
     ;
@@ -207,37 +190,44 @@ fieldsep
     ;
 
 operatorOr
-    : 'or';
+    : 'or'
+    ;
 
 operatorAnd
-    : 'and';
+    : 'and'
+    ;
 
 operatorComparison
-    : '<' | '>' | '<=' | '>=' | '~=' | '==';
+    : '<' | '>' | '<=' | '>=' | '~=' | '=='
+    ;
 
 operatorStrcat
-    : '..';
+    : '..'
+    ;
 
 operatorAddSub
-    : '+' | '-';
+    : '+' | '-'
+    ;
 
 operatorMulDivMod
-    : '*' | '/' | '%' | '//';
+    : '*' | '/' | '%' | '//'
+    ;
 
 operatorBitwise
-    : '&' | '|' | '~' | '<<' | '>>';
+    : '&' | '|' | '~' | '<<' | '>>'
+    ;
 
 operatorUnary
-    : 'not' | '#' | '-' | '~';
+    : 'not' | '#' | '-' | '~'
+    ;
 
 operatorPower
-    : '^';
+    : '^'
+    ;
 
 number
     : INT | HEX | FLOAT | HEX_FLOAT | BIN
     ;
-     : INT | BIN | HEX | FLOAT | HEX_FLOAT
-     ;
 
 string
     : NORMALSTRING | CHARSTRING | LONGSTRING
@@ -258,61 +248,42 @@ CHARSTRING
     ;
 
 LONGSTRING
-    : '[' NESTED_STR ']'
-    ;
-
-fragment
-NESTED_STR
-    : '=' NESTED_STR '='
-    | '[' .*? ']'
+    : '[' '='* '[' .*? ']' '='* ']'
     ;
 
 BIN
-    : '0' [bB] BinDigit (BinDigit|'_')*
+    : '0' [bB] BinDigit (BinDigit | '_')*
     ;
 
 INT
-    : Digit (Digit|'_')*
+    : Digit (Digit | '_')*
     ;
 
 HEX
-    : '0' [xX] HexDigit (HexDigit|'_')*
+    : '0' [xX] HexDigit (HexDigit | '_')*
     ;
-     : '0' [bB] [01] ([01] | '_')*
-     ;
-
-HEX_FLOAT
-     : '0' [xX] HexDigit (HexDigit | '_')* '.' (HexDigit | '_')* HexExponentPart?
-     | '0' [xX] '.' HexDigit (HexDigit | '_')* HexExponentPart?
-     | '0' [xX] HexDigit (HexDigit | '_')* HexExponentPart
-     ;
-
-HEX
-     : '0' [xX] HexDigit (HexDigit | '_')*
-     ;
 
 FLOAT
-     : Digit (Digit | '_')* '.' (Digit | '_')* ExponentPart?
-     | '.' Digit (Digit | '_')* ExponentPart?
-     | Digit (Digit | '_')* ExponentPart
-     ;
+    : Digit (Digit | '_')* '.' (Digit | '_')* ExponentPart?
+    | '.' Digit (Digit | '_')* ExponentPart?
+    | Digit (Digit | '_')* ExponentPart
+    ;
 
-INT
-     : Digit (Digit | '_')*
-     ;
+HEX_FLOAT
+    : '0' [xX] HexDigit (HexDigit | '_')* '.' (HexDigit | '_')* HexExponentPart?
+    | '0' [xX] '.' HexDigit (HexDigit | '_')* HexExponentPart?
+    | '0' [xX] HexDigit (HexDigit | '_')* HexExponentPart
+    ;
 
-fragment
-ExponentPart
+fragment ExponentPart
     : [eE] [+-]? Digit+
     ;
 
-fragment
-HexExponentPart
+fragment HexExponentPart
     : [pP] [+-]? Digit+
     ;
 
-fragment
-EscapeSequence
+fragment EscapeSequence
     : '\\' [abfnrtvz"'\\]
     | '\\' '\r'? '\n'
     | DecimalEscape
@@ -321,50 +292,38 @@ EscapeSequence
     | '\\' .
     ;
 
-fragment
-DecimalEscape
+fragment DecimalEscape
     : '\\' Digit
     | '\\' Digit Digit
     | '\\' [0-2] Digit Digit
     ;
 
-fragment
-HexEscape
+fragment HexEscape
     : '\\' 'x' HexDigit HexDigit
     ;
 
-fragment
-UtfEscape
+fragment UtfEscape
     : '\\' 'u{' HexDigit+ '}'
     ;
 
-fragment
-Digit
+fragment Digit
     : [0-9]
     ;
 
-fragment
-BinDigit
+fragment BinDigit
     : [0-1]
     ;
 
-fragment
-HexDigit
+fragment HexDigit
     : [0-9a-fA-F]
     ;
 
 COMMENT
-    : '--[' NESTED_STR ']' -> channel(HIDDEN)
+    : '--' '[' '='* '[' .*? ']' '='* ']' -> channel(HIDDEN)
     ;
 
 LINE_COMMENT
-    : '--'
-    (                                               // --
-    | '[' '='*                                      // --[==
-    | '[' '='* ~('='|'['|'\r'|'\n') ~('\r'|'\n')*   // --[==AA
-    | ~('['|'\r'|'\n') ~('\r'|'\n')*                // --AAA
-    ) ('\r\n'|'\r'|'\n'|EOF)
-    -> channel(HIDDEN)
+    : '--' ~('\r'|'\n')* ('\r\n'|'\r'|'\n'|EOF) -> channel(HIDDEN)
     ;
 
 WS
@@ -372,5 +331,5 @@ WS
     ;
 
 SHEBANG
-    : '#' '!' ~('\n'|'\r')* -> channel(HIDDEN)
+    : '#!' ~('\n'|'\r')* -> channel(HIDDEN)
     ;

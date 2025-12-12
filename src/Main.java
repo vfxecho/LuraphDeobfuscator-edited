@@ -9,6 +9,9 @@ import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class Main {
     public static void main(String[] args) throws IOException {
@@ -35,8 +38,11 @@ public class Main {
 
         String fileName = cmd.getOptionValue("i");
 
+        String inputSource = new String(Files.readAllBytes(Paths.get(fileName)), StandardCharsets.UTF_8);
+        inputSource = LuaSourcePreprocessor.preprocess(inputSource);
+
         // generate parse tree
-        LuaLexer lexer = new LuaLexer(CharStreams.fromFileName(fileName));
+        LuaLexer lexer = new LuaLexer(CharStreams.fromString(inputSource, fileName));
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         LuaParser parser = new LuaParser(tokens);
         LuaParser.ChunkContext parseTree = parser.chunk();
@@ -56,9 +62,7 @@ public class Main {
         renameMgr.optimize();
 
         if (cmd.hasOption("p") || cmd.hasOption("c")) {
-            System.err.println("Debug: Generating source...");
             String source = new ASTSourceGenerator(root).generate();
-            System.err.println("Debug: Source generated, length: " + source.length());
 
             if (cmd.hasOption("p")) {
                 System.out.println(source);
@@ -67,15 +71,6 @@ public class Main {
             if (cmd.hasOption("c")) {
                 ClipboardUtils.set(source);
             }
-            
-            // Exit after printing source to avoid running devirtualizer which might crash
-            // and because we want to see the state at this point.
-            // If the user wants to run devirtualizer, they shouldn't use -p with this hack, 
-            // but for my debugging purpose this is fine.
-            // Wait, I should probably not exit if I want to support the original intended behavior later? 
-            // But the original behavior printed AFTER devirtualization.
-            // For now, I'll exit to debug.
-            System.exit(0);
         }
 
         // devirtualize
@@ -85,18 +80,6 @@ public class Main {
         new LuaChunkOptimizer().optimize(chunk);
 
         chunk = LuaChunkOptimizer.removeClosureAntiSymbExecTrick(chunk);
-
-        if (cmd.hasOption("p") || cmd.hasOption("c")) {
-            String source = new ASTSourceGenerator(root).generate();
-
-            if (cmd.hasOption("p")) {
-                System.out.println(source);
-            }
-
-            if (cmd.hasOption("c")) {
-                ClipboardUtils.set(source);
-            }
-        }
 
         if (cmd.hasOption("s")) {
             ASTTree tree = ASTTreeBuilder.create(root);

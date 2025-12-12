@@ -1,4 +1,5 @@
 import ASTNodes.*;
+import ASTNodes.Number;
 import LuaVM.*;
 import java.util.*;
 import java.util.logging.Logger;
@@ -186,6 +187,23 @@ public class RedirectionHandlerProcessor {
         }
         return -1; // Not found
     }
+
+    private static Expression getFirstCallArg(FunctionCall call) {
+        if (call.nameAndArgs.isEmpty()) {
+            return null;
+        }
+
+        Expression args = call.nameAndArgs.get(0).args;
+        if (args instanceof ExprList) {
+            ExprList exprList = (ExprList) args;
+            if (exprList.exprs.isEmpty()) {
+                return null;
+            }
+            return exprList.exprs.get(0);
+        }
+
+        return args;
+    }
     
     private static Integer extractRedirectOpcode(If stmt) {
         // Look for function call to vm_opcode_handler_table in the if body
@@ -193,13 +211,11 @@ public class RedirectionHandlerProcessor {
             Expression retExpr = stmt.ifstmt.second.ret.exprs.exprs.get(0);
             if (retExpr instanceof FunctionCall) {
                 FunctionCall call = (FunctionCall)retExpr;
-                if (call.nameAndArgs.size() > 0) {
-                    Expression firstArg = call.nameAndArgs.get(0).args.exprs.get(0);
-                    if (firstArg instanceof Variable) {
-                        Variable var = (Variable)firstArg;
-                        if (var.suffixes.size() > 0 && var.suffixes.get(0).expOrName instanceof Number) {
-                            return (int)((Number)var.suffixes.get(0).expOrName).value;
-                        }
+                Expression firstArg = getFirstCallArg(call);
+                if (firstArg instanceof Variable) {
+                    Variable var = (Variable)firstArg;
+                    if (var.suffixes.size() > 0 && var.suffixes.get(0).expOrName instanceof Number) {
+                        return (int)((Number)var.suffixes.get(0).expOrName).value;
                     }
                 }
             }
@@ -209,17 +225,17 @@ public class RedirectionHandlerProcessor {
     
     private static Map<String, Double> extractOperandModifications(If stmt) {
         Map<String, Double> modifications = new HashMap<>();
-        
+
         // Look for table constructor with operand mappings
         if (stmt.ifstmt.second.ret != null && stmt.ifstmt.second.ret.exprs.exprs.size() > 0) {
             Expression retExpr = stmt.ifstmt.second.ret.exprs.exprs.get(0);
             if (retExpr instanceof FunctionCall) {
                 FunctionCall call = (FunctionCall)retExpr;
-                if (call.nameAndArgs.size() > 0) {
-                    Expression firstArg = call.nameAndArgs.get(0).args.exprs.get(0);
-                    if (firstArg instanceof TableConstructor) {
-                        TableConstructor table = (TableConstructor)firstArg;
-                        for (Pair<Expression, Expression> entry : table.entries) {
+                Expression firstArg = getFirstCallArg(call);
+                if (firstArg instanceof TableConstructor) {
+                    TableConstructor table = (TableConstructor)firstArg;
+                    for (Pair<Expression, Expression> entry : table.entries) {
+                        if (entry.first instanceof Number) {
                             String operandIdx = ((Number)entry.first).toString();
                             // This would need evaluation - simplified for now
                             modifications.put(operandIdx, 0.0); // Placeholder
@@ -228,7 +244,7 @@ public class RedirectionHandlerProcessor {
                 }
             }
         }
-        
+
         return modifications;
     }
     
