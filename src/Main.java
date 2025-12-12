@@ -9,6 +9,9 @@ import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class Main {
     public static void main(String[] args) throws IOException {
@@ -35,8 +38,11 @@ public class Main {
 
         String fileName = cmd.getOptionValue("i");
 
+        String inputSource = new String(Files.readAllBytes(Paths.get(fileName)), StandardCharsets.UTF_8);
+        inputSource = LuaSourcePreprocessor.preprocess(inputSource);
+
         // generate parse tree
-        LuaLexer lexer = new LuaLexer(CharStreams.fromFileName(fileName));
+        LuaLexer lexer = new LuaLexer(CharStreams.fromString(inputSource, fileName));
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         LuaParser parser = new LuaParser(tokens);
         LuaParser.ChunkContext parseTree = parser.chunk();
