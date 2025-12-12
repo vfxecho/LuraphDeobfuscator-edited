@@ -60,7 +60,6 @@ public abstract class BaseHandlerSignature extends HandlerSignature {
                 case ADD:
                 case SUB:
                 case MUL:
-                case DIV:
                 case REAL_DIV:
                 case INTEGER_DIV:
                 case MOD:

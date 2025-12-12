@@ -22,7 +22,6 @@ public class Number extends Literal {
         else {
             value = Double.parseDouble(clean);
         }
-        value = LuaNumberParser.parse(literalValue);
     }
 
     public Number(double literalValue) {

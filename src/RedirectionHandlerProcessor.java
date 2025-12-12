@@ -1,4 +1,5 @@
 import ASTNodes.*;
+import ASTNodes.Number;
 import LuaVM.*;
 import java.util.*;
 import java.util.logging.Logger;
@@ -194,11 +195,17 @@ public class RedirectionHandlerProcessor {
             if (retExpr instanceof FunctionCall) {
                 FunctionCall call = (FunctionCall)retExpr;
                 if (call.nameAndArgs.size() > 0) {
-                    Expression firstArg = call.nameAndArgs.get(0).args.exprs.get(0);
-                    if (firstArg instanceof Variable) {
-                        Variable var = (Variable)firstArg;
-                        if (var.suffixes.size() > 0 && var.suffixes.get(0).expOrName instanceof Number) {
-                            return (int)((Number)var.suffixes.get(0).expOrName).value;
+                    Expression args = call.nameAndArgs.get(0).args;
+                    if (args instanceof ExprList) {
+                        ExprList argsList = (ExprList)args;
+                        if (argsList.exprs.size() > 0) {
+                            Expression firstArg = argsList.exprs.get(0);
+                            if (firstArg instanceof Variable) {
+                                Variable var = (Variable)firstArg;
+                                if (var.suffixes.size() > 0 && var.suffixes.get(0).expOrName instanceof Number) {
+                                    return (int)((Number)var.suffixes.get(0).expOrName).value;
+                                }
+                            }
                         }
                     }
                 }
@@ -216,13 +223,19 @@ public class RedirectionHandlerProcessor {
             if (retExpr instanceof FunctionCall) {
                 FunctionCall call = (FunctionCall)retExpr;
                 if (call.nameAndArgs.size() > 0) {
-                    Expression firstArg = call.nameAndArgs.get(0).args.exprs.get(0);
-                    if (firstArg instanceof TableConstructor) {
-                        TableConstructor table = (TableConstructor)firstArg;
-                        for (Pair<Expression, Expression> entry : table.entries) {
-                            String operandIdx = ((Number)entry.first).toString();
-                            // This would need evaluation - simplified for now
-                            modifications.put(operandIdx, 0.0); // Placeholder
+                    Expression args = call.nameAndArgs.get(0).args;
+                    if (args instanceof ExprList) {
+                        ExprList argsList = (ExprList)args;
+                        if (argsList.exprs.size() > 0) {
+                            Expression firstArg = argsList.exprs.get(0);
+                            if (firstArg instanceof TableConstructor) {
+                                TableConstructor table = (TableConstructor)firstArg;
+                                for (Pair<Expression, Expression> entry : table.entries) {
+                                    String operandIdx = ((Number)entry.first).toString();
+                                    // This would need evaluation - simplified for now
+                                    modifications.put(operandIdx, 0.0); // Placeholder
+                                }
+                            }
                         }
                     }
                 }
