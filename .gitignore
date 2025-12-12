@@ -137,3 +137,10 @@ jspm_packages/
 # Temporary folders
 tmp/
 temp/
+*.class
+*.jar
+src/grammar/
+*.pyc
+.DS_Store
+/test_numbers.lua
+/test_parse.sh

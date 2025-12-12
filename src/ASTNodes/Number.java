@@ -4,7 +4,7 @@ public class Number extends Literal {
     public final double value;
 
     public Number(String literalValue) {
-        value = Double.parseDouble(literalValue);
+        value = LuaNumberParser.parse(literalValue);
     }
 
     public Number(double literalValue) {
