@@ -54,6 +54,62 @@ public class BuildASTVisitor extends LuaBaseVisitor<Node> {
     }
 
     @Override
+    public Assign visitStmtCompoundAssign(LuaParser.StmtCompoundAssignContext ctx) {
+        // Convert var += exp to var = var + exp
+        Assign assign = new Assign();
+        assign.vars = GetVarList(ctx.varlist());
+        
+        // Compound assignments in Luraph/Lua extensions typically apply to the first variable if multiple are listed,
+        // but syntactically it looks like varlist op explist.
+        // Assuming 1:1 mapping or that it applies element-wise if supported. 
+        // For simplicity and typical use case, let's construct the RHS expressions.
+        
+        ExprList rhsExprs = GetExprList(ctx.explist());
+        
+        // Get the operator
+        String opToken = ctx.getChild(1).getText(); // The operator token is the second child
+        BinaryExpression.Operator binOp = BinaryExpression.Operator.INVALID;
+        
+        switch (opToken) {
+            case "+=": binOp = BinaryExpression.Operator.ADD; break;
+            case "-=": binOp = BinaryExpression.Operator.SUB; break;
+            case "*=": binOp = BinaryExpression.Operator.MUL; break;
+            case "/=": binOp = BinaryExpression.Operator.REAL_DIV; break;
+            case "%=": binOp = BinaryExpression.Operator.MOD; break;
+            case "^=": binOp = BinaryExpression.Operator.POW; break;
+        }
+        
+        ExprList newExprs = new ExprList();
+        
+        for (int i = 0; i < assign.vars.vars.size(); i++) {
+            Expression varExpr = assign.vars.vars.get(i);
+            Expression val = null;
+            if (i < rhsExprs.exprs.size()) {
+                val = rhsExprs.exprs.get(i);
+            } else {
+                // Should probably not happen in valid code or defaults to nil, 
+                // but for compound assignment, it implies we need a value.
+                // If mismatch, maybe just use nil? 
+                val = new Nil(); 
+            }
+            
+            // var = var op val
+            // We need a copy of var for the expression to avoid reference issues if AST is mutated
+            // But Variable structure is simple enough.
+            
+            // Construct var op val
+            // Note: In AST, Variable is a Node. We can use it as expression.
+            // But we should probably clone it if we want to be safe, though existing AST usage seems lax on cloning.
+            
+            BinaryExpression binExpr = new BinaryExpression(binOp, varExpr, val);
+            newExprs.exprs.add(binExpr);
+        }
+        
+        assign.exprs = newExprs;
+        return assign;
+    }
+
+    @Override
     public FunctionCall visitStmtFuncCall(LuaParser.StmtFuncCallContext ctx) {
         FunctionCall call = visitFunctioncall(ctx.functioncall());
         call.isStatement = true;
