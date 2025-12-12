@@ -98,6 +98,30 @@ public class LuraphDevirtualizer {
         this.root = root;
     }
 
+    public static final class DecodeChunkMetadata {
+        public final String constantTableIdx;
+        public final String instructionTableIdx;
+        public final String prototypeTableIdx;
+        public final String debugTableIdx;
+
+        private DecodeChunkMetadata(String constantTableIdx, String instructionTableIdx, String prototypeTableIdx, String debugTableIdx) {
+            this.constantTableIdx = constantTableIdx;
+            this.instructionTableIdx = instructionTableIdx;
+            this.prototypeTableIdx = prototypeTableIdx;
+            this.debugTableIdx = debugTableIdx;
+        }
+    }
+
+    public DecodeChunkMetadata extractDecodeChunkMetadata() {
+        ASTOptimizerMgr mgr = new ASTOptimizerMgr(root);
+        mgr.addRenamer(new RenamerPass1());
+        mgr.optimize();
+
+        getDecodeChunkData();
+
+        return new DecodeChunkMetadata(constantTableIdx, instructionTableIdx, prototypeTableIdx, debugTableIdx);
+    }
+
     public LuaChunk process() {
         ASTOptimizerMgr mgr = new ASTOptimizerMgr(root);
         mgr.addRenamer(new RenamerPass1());
@@ -462,6 +486,8 @@ public class LuraphDevirtualizer {
     }
 
     private LuaChunk loadChunks() {
+        requireDecodeChunkMetadataResolved("loadChunks");
+
         List<Node> children = decodeChunk.block.getChildren();
 
         LuaChunk chunk = new LuaChunk();
@@ -685,6 +711,183 @@ public class LuraphDevirtualizer {
         System.out.println();
     }
 
+    private String describeDecodeChunkForSteps() {
+        if (decodeChunk == null || decodeChunk.block == null) {
+            return "decode_chunk not resolved";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("decode_chunk for-loop candidates:\n");
+
+        for (int i = 0; i < decodeChunk.block.stmts.size(); i++) {
+            Statement stmt = decodeChunk.block.stmts.get(i);
+
+            if (!(stmt instanceof ForStep)) {
+                continue;
+            }
+
+            ForStep loop = (ForStep)stmt;
+
+            sb.append("  stmt[").append(i).append("] ifCount=").append(stmt.count(If.class));
+
+            if (loop.block == null) {
+                sb.append(", bodyStmts=<null>\n");
+                continue;
+            }
+
+            sb.append(", bodyStmts=").append(loop.block.stmts.size());
+
+            if (!loop.block.stmts.isEmpty()) {
+                sb.append(", first=\"").append(loop.block.stmts.get(0).line()).append("\"");
+            }
+
+            sb.append("\n");
+        }
+
+        return sb.toString();
+    }
+
+    private String getAssignLhsSuffix0(Assign assign, String context) {
+        if (assign == null || assign.vars == null || assign.vars.vars.size() != 1 || !(assign.vars.vars.get(0) instanceof Variable)) {
+            throw new IllegalStateException("Expected single-variable assignment while resolving decode_chunk metadata (" + context + ")");
+        }
+
+        Variable lhs = (Variable)assign.vars.vars.get(0);
+
+        if (lhs.suffixes == null || lhs.suffixes.isEmpty()) {
+            throw new IllegalStateException("Expected table assignment with at least one suffix while resolving decode_chunk metadata (" + context + "): " + assign.line());
+        }
+
+        return lhs.suffixes.get(0).expOrName.line();
+    }
+
+    private boolean forStepContainsCall(ForStep loop, String functionName) {
+        if (loop == null || loop.block == null) {
+            return false;
+        }
+
+        for (Node node : loop.block.getChildren(FunctionCall.class)) {
+            FunctionCall call = (FunctionCall)node;
+
+            if (call.varOrExp != null && functionName.equals(call.varOrExp.line())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private Set<String> findTableIdxCandidatesWrittenByCall(ForStep loop, String functionName) {
+        Set<String> candidates = new LinkedHashSet<>();
+
+        if (loop == null || loop.block == null) {
+            return candidates;
+        }
+
+        Set<String> resultVars = new HashSet<>();
+
+        for (Statement stmt : loop.block.stmts) {
+            if (stmt instanceof LocalDeclare) {
+                LocalDeclare decl = (LocalDeclare)stmt;
+
+                if (decl.names.names.size() == 1 && decl.exprs.exprs.size() == 1 && decl.exprs.exprs.get(0) instanceof FunctionCall) {
+                    FunctionCall call = (FunctionCall)decl.exprs.exprs.get(0);
+
+                    if (call.varOrExp != null && functionName.equals(call.varOrExp.line())) {
+                        resultVars.add(decl.names.names.get(0).symbol());
+                    }
+                }
+            }
+            else if (stmt instanceof Assign) {
+                Assign assign = (Assign)stmt;
+
+                if (assign.vars.vars.size() == 1 && assign.exprs.exprs.size() == 1 && assign.exprs.exprs.get(0) instanceof FunctionCall && assign.vars.vars.get(0) instanceof Variable) {
+                    FunctionCall call = (FunctionCall)assign.exprs.exprs.get(0);
+                    Variable lhs = (Variable)assign.vars.vars.get(0);
+
+                    if (call.varOrExp != null && functionName.equals(call.varOrExp.line())) {
+                        if (lhs.suffixes != null && !lhs.suffixes.isEmpty()) {
+                            candidates.add(lhs.suffixes.get(0).expOrName.line());
+                        }
+                        else {
+                            resultVars.add(lhs.symbol());
+                        }
+                    }
+                }
+            }
+        }
+
+        if (resultVars.isEmpty()) {
+            return candidates;
+        }
+
+        for (Statement stmt : loop.block.stmts) {
+            if (!(stmt instanceof Assign)) {
+                continue;
+            }
+
+            Assign assign = (Assign)stmt;
+
+            if (assign.vars.vars.size() != 1 || assign.exprs.exprs.size() != 1 || !(assign.exprs.exprs.get(0) instanceof Variable) || !(assign.vars.vars.get(0) instanceof Variable)) {
+                continue;
+            }
+
+            Variable rhs = (Variable)assign.exprs.exprs.get(0);
+            Variable lhs = (Variable)assign.vars.vars.get(0);
+
+            if (resultVars.contains(rhs.symbol()) && lhs.suffixes != null && !lhs.suffixes.isEmpty()) {
+                candidates.add(lhs.suffixes.get(0).expOrName.line());
+            }
+        }
+
+        return candidates;
+    }
+
+    private String selectSingleIdxOrThrow(String idxName, String expectedPattern, Set<String> candidates) {
+        if (candidates.size() == 1) {
+            return candidates.iterator().next();
+        }
+
+        if (candidates.isEmpty()) {
+            throw new IllegalStateException("Unable to resolve " + idxName + " in decode_chunk. Expected pattern: " + expectedPattern + "\n" + describeDecodeChunkForSteps());
+        }
+
+        throw new IllegalStateException("Ambiguous " + idxName + " candidates in decode_chunk: " + candidates + ". Expected pattern: " + expectedPattern + "\n" + describeDecodeChunkForSteps());
+    }
+
+    private void requireDecodeChunkMetadataResolved(String stage) {
+        List<String> missing = new ArrayList<>();
+
+        if (decodeChunk == null) {
+            missing.add("decodeChunk");
+        }
+
+        if (constantTableIdx == null) {
+            missing.add("constantTableIdx");
+        }
+
+        if (instructionTableIdx == null) {
+            missing.add("instructionTableIdx");
+        }
+
+        if (prototypeTableIdx == null) {
+            missing.add("prototypeTableIdx");
+        }
+
+        if (debugTableIdx == null) {
+            missing.add("debugTableIdx");
+        }
+
+        if (!missing.isEmpty()) {
+            throw new IllegalStateException("decode_chunk metadata resolution failed at stage '" + stage + "'. Missing: " + missing + "\n" + describeDecodeChunkForSteps());
+        }
+
+        if (opcodeIdxs.isEmpty() || aIdxs.isEmpty() || bcIdxs.isEmpty() || bxIdxs.isEmpty()) {
+            throw new IllegalStateException("decode_chunk instruction operand metadata was not resolved at stage '" + stage + "'. " +
+                    "opcodeIdxs=" + opcodeIdxs + ", aIdxs=" + aIdxs + ", bcIdxs=" + bcIdxs + ", bxIdxs=" + bxIdxs + "\n" + describeDecodeChunkForSteps());
+        }
+    }
+
     private int getDecodeChunkConstantStatementIdx() {
         int idx = -1;
         int max = 0;
@@ -696,7 +899,7 @@ public class LuraphDevirtualizer {
                 int count = stmt.count(If.class);
 
                 if (count > max) {
-                    count = max;
+                    max = count;
                     idx = i;
                 }
             }
@@ -708,89 +911,204 @@ public class LuraphDevirtualizer {
     private void getDecodeChunkConstantIndices() {
         int constantStmtIdx = getDecodeChunkConstantStatementIdx();
 
-        ForStep constantStep = (ForStep)decodeChunk.block.stmts.get(constantStmtIdx);
+        if (constantStmtIdx < 0) {
+            throw new IllegalStateException("Unable to locate constant loader loop in decode_chunk (no for-loop with if-statements found).\n" + describeDecodeChunkForSteps());
+        }
 
-        If stmt = (If)constantStep.block.first(If.class);
-        Variable var = (Variable)stmt.ifstmt.second.first(Variable.class);
+        Statement stmtNode = decodeChunk.block.stmts.get(constantStmtIdx);
+
+        if (!(stmtNode instanceof ForStep)) {
+            throw new IllegalStateException("Internal error: constant loader statement was not a for-loop.\n" + describeDecodeChunkForSteps());
+        }
+
+        ForStep constantStep = (ForStep)stmtNode;
+
+        if (constantStep.block == null) {
+            throw new IllegalStateException("Constant loader for-loop has null body while resolving decode_chunk metadata.\n" + describeDecodeChunkForSteps());
+        }
+
+        If firstIf = (If)constantStep.block.first(If.class);
+
+        if (firstIf == null || firstIf.ifstmt == null || firstIf.ifstmt.second == null) {
+            throw new IllegalStateException("Unable to resolve constantIdx in decode_chunk constant loader (missing if-structure).\n" + describeDecodeChunkForSteps());
+        }
+
+        Variable var = (Variable)firstIf.ifstmt.second.first(Variable.class);
+
+        if (var == null || var.suffixes == null || var.suffixes.isEmpty()) {
+            throw new IllegalStateException("Unable to resolve constantIdx in decode_chunk constant loader (missing table index variable).\n" + describeDecodeChunkForSteps());
+        }
+
         constantIdx = var.suffixes.get(0).expOrName.line();
 
-        Assign last = (Assign)constantStep.block.stmts.get(constantStep.block.stmts.size() - 1);
-        constantTableIdx = ((Variable)last.first(Variable.class)).suffixes.get(0).expOrName.line();
+        Assign lastAssign = null;
+
+        for (int i = constantStep.block.stmts.size() - 1; i >= 0; i--) {
+            if (constantStep.block.stmts.get(i) instanceof Assign) {
+                lastAssign = (Assign)constantStep.block.stmts.get(i);
+                break;
+            }
+        }
+
+        if (lastAssign == null) {
+            throw new IllegalStateException("Unable to resolve constantTableIdx in decode_chunk constant loader (no assignment found in loop body).\n" + describeDecodeChunkForSteps());
+        }
+
+        constantTableIdx = getAssignLhsSuffix0(lastAssign, "constantTableIdx");
     }
 
     private void getDecodeChunkDebugIndices() {
-        for (Node stmt : decodeChunk.block.getChildren(ForStep.class)) {
-            List<Node> children = ((ForStep)stmt).block.getChildren();
+        Set<String> candidates = new LinkedHashSet<>();
 
-            if (children.size() == 1) {
-                FunctionCall call = (FunctionCall)children.get(0).first(FunctionCall.class);
-                if (call.varOrExp.line().equals(getDwordName)) {
-                    Assign assign = (Assign)children.get(0);
-                    debugTableIdx = ((Variable)assign.first(Variable.class)).suffixes.get(0).expOrName.line();
-                }
+        for (Node stmt : decodeChunk.block.getChildren(ForStep.class)) {
+            ForStep loop = (ForStep)stmt;
+
+            if (loop.count(If.class) > 0) {
+                continue;
             }
+
+            if (!forStepContainsCall(loop, getDwordName)) {
+                continue;
+            }
+
+            candidates.addAll(findTableIdxCandidatesWrittenByCall(loop, getDwordName));
         }
+
+        debugTableIdx = selectSingleIdxOrThrow("debugTableIdx", "cache[debugTableIdx][i] = get_dword(...) (directly or via a temp)", candidates);
     }
 
     private void getDecodeChunkInstructionIndicies() {
+        Set<String> instructionTableCandidates = new LinkedHashSet<>();
+
+        ForStep instructionLoop = null;
+
         for (Node stmt : decodeChunk.block.getChildren(ForStep.class)) {
-            Block block = (Block)((ForStep)stmt).block;
-            FunctionCall call = (FunctionCall)block.first(FunctionCall.class);
-            if (call.varOrExp.line().equals(getInstructionName)) {
-                List<Node> assign = block.getChildren(Assign.class);
+            ForStep loop = (ForStep)stmt;
 
-                for (Node s : assign) {
-                    FunctionCall gbitsCall = (FunctionCall)s.first(FunctionCall.class);
-                    String idx = ((Variable)s.first(Variable.class)).suffixes.get(0).expOrName.line();
+            if (!forStepContainsCall(loop, getInstructionName)) {
+                continue;
+            }
 
-                    if (gbitsCall != null && gbitsCall.varOrExp.line().equals(getBitsName)) {
-                        for (NameAndArgs nargs : gbitsCall.nameAndArgs) {
-                            ExprList list = (ExprList)nargs.args;
-                            double from = ((Number)list.exprs.get(1)).value;
-                            double to = ((Number)list.exprs.get(2)).value;
-                            int size = (int)(to - from + 1);
+            if (instructionLoop != null && instructionLoop != loop) {
+                throw new IllegalStateException("Ambiguous instruction loader loops found in decode_chunk while resolving metadata.\n" + describeDecodeChunkForSteps());
+            }
 
-                            if (size == 6) {
-                                opcodeIdxs.add(idx);
-                            }
-                            else if (size == 8){
-                                aIdxs.add(idx);
-                            }
-                            else if (size == 9) {
-                                bcIdxs.add(idx);
-                            }
-                            else if (size == 18) {
-                                bxIdxs.add(idx);
-                            }
-                        }
+            instructionLoop = loop;
+
+            instructionTableCandidates.addAll(findTableIdxCandidatesWrittenByCall(loop, getInstructionName));
+
+            if (loop.block == null) {
+                continue;
+            }
+
+            for (Node assignNode : loop.block.getChildren(Assign.class)) {
+                Assign assign = (Assign)assignNode;
+
+                if (assign.vars.vars.size() != 1 || assign.exprs.exprs.size() != 1 || !(assign.vars.vars.get(0) instanceof Variable)) {
+                    continue;
+                }
+
+                Variable lhs = (Variable)assign.vars.vars.get(0);
+
+                if (lhs.suffixes == null || lhs.suffixes.isEmpty()) {
+                    continue;
+                }
+
+                String idx = lhs.suffixes.get(0).expOrName.line();
+
+                if (!(assign.exprs.exprs.get(0) instanceof FunctionCall)) {
+                    continue;
+                }
+
+                FunctionCall call = (FunctionCall)assign.exprs.exprs.get(0);
+
+                if (call.varOrExp == null || !call.varOrExp.line().equals(getBitsName)) {
+                    continue;
+                }
+
+                for (NameAndArgs nargs : call.nameAndArgs) {
+                    if (!(nargs.args instanceof ExprList)) {
+                        continue;
                     }
-                    else {
-                        instructionTableIdx = idx;
+
+                    ExprList list = (ExprList)nargs.args;
+
+                    if (list.exprs.size() < 3 || !(list.exprs.get(1) instanceof Number) || !(list.exprs.get(2) instanceof Number)) {
+                        throw new IllegalStateException("Unexpected get_bits argument structure while resolving decode_chunk metadata: " + assign.line());
+                    }
+
+                    double from = ((Number)list.exprs.get(1)).value;
+                    double to = ((Number)list.exprs.get(2)).value;
+                    int size = (int)(to - from + 1);
+
+                    if (size == 6) {
+                        opcodeIdxs.add(idx);
+                    }
+                    else if (size == 8){
+                        aIdxs.add(idx);
+                    }
+                    else if (size == 9) {
+                        bcIdxs.add(idx);
+                    }
+                    else if (size == 18) {
+                        bxIdxs.add(idx);
                     }
                 }
             }
+        }
+
+        if (instructionLoop == null) {
+            throw new IllegalStateException("Unable to locate instruction loader loop in decode_chunk (no get_instruction call found).\n" + describeDecodeChunkForSteps());
+        }
+
+        instructionTableIdx = selectSingleIdxOrThrow("instructionTableIdx", "cache[instructionTableIdx][i] = get_instruction(...) (directly or via a temp)", instructionTableCandidates);
+
+        if (opcodeIdxs.isEmpty() || aIdxs.isEmpty() || bcIdxs.isEmpty() || bxIdxs.isEmpty()) {
+            throw new IllegalStateException("Unable to resolve instruction operand indices in decode_chunk. opcodeIdxs=" + opcodeIdxs + ", aIdxs=" + aIdxs + ", bcIdxs=" + bcIdxs + ", bxIdxs=" + bxIdxs + "\n" + describeDecodeChunkForSteps());
         }
     }
 
     private void getDecodeChunkPrototypeIndicies() {
-        for (Node stmt : decodeChunk.block.getChildren(ForStep.class)) {
-            List<Node> children = ((ForStep)stmt).block.getChildren();
+        Set<String> candidates = new LinkedHashSet<>();
 
-            if (children.size() == 1) {
-                FunctionCall call = (FunctionCall)children.get(0).first(FunctionCall.class);
-                if (call.varOrExp.line().equals(decodeChunkName)) {
-                    Assign assign = (Assign)children.get(0);
-                    prototypeTableIdx = ((Variable)assign.first(Variable.class)).suffixes.get(0).expOrName.line();
-                }
+        for (Node stmt : decodeChunk.block.getChildren(ForStep.class)) {
+            ForStep loop = (ForStep)stmt;
+
+            if (loop.count(If.class) > 0) {
+                continue;
             }
+
+            if (!forStepContainsCall(loop, decodeChunkName)) {
+                continue;
+            }
+
+            candidates.addAll(findTableIdxCandidatesWrittenByCall(loop, decodeChunkName));
         }
+
+        prototypeTableIdx = selectSingleIdxOrThrow("prototypeTableIdx", "cache[prototypeTableIdx][i] = decode_chunk(...) (directly or via a temp)", candidates);
     }
 
     private void getDecodeChunkData() {
+        if (decodeChunk == null || decodeChunk.block == null) {
+            throw new IllegalStateException("decode_chunk was not resolved; ensure the AST has been renamed (e.g. ASTBasicRenamer) before devirtualization.");
+        }
+
+        constantTableIdx = null;
+        debugTableIdx = null;
+        instructionTableIdx = null;
+        prototypeTableIdx = null;
+
+        opcodeIdxs.clear();
+        aIdxs.clear();
+        bcIdxs.clear();
+        bxIdxs.clear();
+
         getDecodeChunkConstantIndices();
         getDecodeChunkDebugIndices();
         getDecodeChunkInstructionIndicies();
         getDecodeChunkPrototypeIndicies();
+
+        requireDecodeChunkMetadataResolved("getDecodeChunkData");
     }
 
     private void luraphDecodeString() {

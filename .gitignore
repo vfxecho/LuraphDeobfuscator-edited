@@ -1,0 +1,18 @@
+*.class
+*.log
+
+# Build output
+/bin/
+/out/
+/target/
+/build/
+
+# IDE
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+
+# OS
+.DS_Store
