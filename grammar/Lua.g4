@@ -236,6 +236,8 @@ operatorPower
 number
     : INT | HEX | FLOAT | HEX_FLOAT | BIN
     ;
+     : INT | BIN | HEX | FLOAT | HEX_FLOAT
+     ;
 
 string
     : NORMALSTRING | CHARSTRING | LONGSTRING
@@ -276,18 +278,28 @@ INT
 HEX
     : '0' [xX] HexDigit (HexDigit|'_')*
     ;
-
-FLOAT
-    : Digit+ '.' Digit* ExponentPart?
-    | '.' Digit+ ExponentPart?
-    | Digit+ ExponentPart
-    ;
+     : '0' [bB] [01] ([01] | '_')*
+     ;
 
 HEX_FLOAT
-    : '0' [xX] HexDigit+ '.' HexDigit* HexExponentPart?
-    | '0' [xX] '.' HexDigit+ HexExponentPart?
-    | '0' [xX] HexDigit+ HexExponentPart
-    ;
+     : '0' [xX] HexDigit (HexDigit | '_')* '.' (HexDigit | '_')* HexExponentPart?
+     | '0' [xX] '.' HexDigit (HexDigit | '_')* HexExponentPart?
+     | '0' [xX] HexDigit (HexDigit | '_')* HexExponentPart
+     ;
+
+HEX
+     : '0' [xX] HexDigit (HexDigit | '_')*
+     ;
+
+FLOAT
+     : Digit (Digit | '_')* '.' (Digit | '_')* ExponentPart?
+     | '.' Digit (Digit | '_')* ExponentPart?
+     | Digit (Digit | '_')* ExponentPart
+     ;
+
+INT
+     : Digit (Digit | '_')*
+     ;
 
 fragment
 ExponentPart
