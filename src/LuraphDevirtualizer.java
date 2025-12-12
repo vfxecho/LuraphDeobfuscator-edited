@@ -4,6 +4,8 @@ import ASTNodes.Number;
 import LuaVM.*;
 
 import java.util.*;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 public class LuraphDevirtualizer {
     private Node root;
@@ -94,8 +96,13 @@ public class LuraphDevirtualizer {
 
     // ABC params never switched
 
+    // Handler matcher for structural signature-based identification
+    private HandlerMatcher handlerMatcher;
+    private static final Logger logger = Logger.getLogger(LuraphDevirtualizer.class.getName());
+
     public LuraphDevirtualizer(Node root) {
         this.root = root;
+        this.handlerMatcher = new HandlerMatcher();
     }
 
     public LuaChunk process() {
@@ -2029,101 +2036,114 @@ public class LuraphDevirtualizer {
         return false;
     }
 
+    // Legacy method kept for reference - now handled by signature-based matching
+    // All the old identifyX methods are no longer used but kept for potential future signature refinement
     private void identifyVmHandler(Function purified, int opcodeIndex) {
-        if (identifyMove(purified, opcodeIndex))
-            return;
-        if (identifyLoadk(purified, opcodeIndex))
-            return;
-        if (identifyLoadBool(purified, opcodeIndex))
-            return;
-        if (identifyLoadNil(purified, opcodeIndex))
-            return;
-        if (identifyGetUpVal(purified, opcodeIndex))
-            return;
-        if (identifyGetGlobal(purified, opcodeIndex))
-            return;
-        if (identifyGetTable(purified, opcodeIndex))
-            return;
-        if (identifySetGlobal(purified, opcodeIndex))
-            return;
-        if (identifySetUpVal(purified, opcodeIndex))
-            return;
-        if (identifySetTable(purified, opcodeIndex))
-            return;
-        if (identifyNewTable(purified, opcodeIndex))
-            return;
-        if (identifySelf(purified, opcodeIndex))
-            return;
-        if (identifyAdd(purified, opcodeIndex))
-            return;
-        if (identifySub(purified, opcodeIndex))
-            return;
-        if (identifyMul(purified, opcodeIndex))
-            return;
-        if (identifyDiv(purified, opcodeIndex))
-            return;
-        if (identifyMod(purified, opcodeIndex))
-            return;
-        if (identifyPow(purified, opcodeIndex))
-            return;
-        if (identifyUnm(purified, opcodeIndex))
-            return;
-        if (identifyNot(purified, opcodeIndex))
-            return;
-        if (identifyLen(purified, opcodeIndex))
-            return;
-        if (identifyConcat(purified, opcodeIndex))
-            return;
-        if (identifyJump(purified, opcodeIndex))
-            return;
-        if (identifyEq(purified, opcodeIndex))
-            return;
-        if (identifyLt(purified, opcodeIndex))
-            return;
-        if (identifyLte(purified, opcodeIndex))
-            return;
-        if (identifyTest(purified, opcodeIndex))
-            return;
-        if (identifyTestSet(purified, opcodeIndex))
-            return;
-        if (identifyCall(purified, opcodeIndex))
-            return;
-        if (identifyTailCall(purified, opcodeIndex))
-            return;
-        if (identifyReturn(purified, opcodeIndex))
-            return;
-        if (identifyForLoop(purified, opcodeIndex))
-            return;
-        if (identifyForPrep(purified, opcodeIndex))
-            return;
-        if (identifyTForLoop(purified, opcodeIndex))
-            return;
-        if (identifySetList(purified, opcodeIndex))
-            return;
-        if (identifyClose(purified, opcodeIndex))
-            return;
-        if (identifyClosure(purified, opcodeIndex))
-            return;
-        if (identifyVarArg(purified, opcodeIndex))
-            return;
-
-        Block block = new Block();
-        block.stmts.add(purified);
-        ASTSourceGenerator gen = new ASTSourceGenerator(block);
-
-        System.out.println(gen.generate());
-
-        throw new RuntimeException("Above printed handler could not be identified");
+        // This method is now replaced by identifyVmHandlerWithLogging
+        // Kept for backward compatibility during refactoring
+        identifyVmHandlerWithLogging(purified, opcodeIndex);
     }
 
     private void identifyVmHandlers() {
+        logger.log(Level.INFO, "Starting VM handler identification using signature-based matching");
+        
+        int totalHandlers = vmOpcodeDispatcherMapping.size();
+        int successfullyIdentified = 0;
+        List<Integer> failedHandlers = new ArrayList<>();
+        
         for (Map.Entry element : vmOpcodeDispatcherMapping.entrySet()) {
             int key = (int)element.getKey();
             int value = (int)element.getValue();
             Function fn = vmHandlerMapping.get(value);
             Function purified = purifyHandler(fn);
-            identifyVmHandler(purified, key);
+            
+            try {
+                identifyVmHandlerWithLogging(purified, key);
+                successfullyIdentified++;
+            } catch (Exception e) {
+                failedHandlers.add(key);
+                logger.log(Level.SEVERE, String.format("Failed to identify handler at opcode index %d: %s", key, e.getMessage()), e);
+            }
         }
+        
+        logger.log(Level.INFO, String.format("Handler identification complete: %d/%d successfully identified", 
+                successfullyIdentified, totalHandlers));
+        
+        if (!failedHandlers.isEmpty()) {
+            logger.log(Level.WARNING, "Failed to identify handlers for opcode indices: " + failedHandlers);
+            logUnmappedHandlerDetails(failedHandlers);
+        }
+        
+        // Verify we have coverage for all required VM operations
+        verifyOpcodeCoverage();
+    }
+    
+    private void identifyVmHandlerWithLogging(Function purified, int opcodeIndex) {
+        VMOp identifiedOp = handlerMatcher.identifyHandler(purified, opcodeIndex);
+        
+        if (identifiedOp != null) {
+            instructionToOpcodeMapping.put(identifiedOp, opcodeIndex);
+            logger.log(Level.FINE, String.format("Successfully mapped opcode %d to %s", opcodeIndex, identifiedOp));
+        } else {
+            // Log detailed analysis for debugging
+            String analysis = handlerMatcher.getDetailedAnalysis(purified, opcodeIndex);
+            logger.log(Level.WARNING, String.format("Could not identify handler at opcode %d.\nAnalysis:\n%s", opcodeIndex, analysis));
+            
+            // Generate the handler source for manual inspection
+            Block block = new Block();
+            block.stmts.add(purified);
+            ASTSourceGenerator gen = new ASTSourceGenerator(block);
+            String handlerSource = gen.generate();
+            
+            logger.log(Level.INFO, String.format("Unidentified handler source (opcode %d):\n%s", opcodeIndex, handlerSource));
+            
+            throw new RuntimeException(String.format("Could not identify handler at opcode %d. See logs for details.", opcodeIndex));
+        }
+    }
+    
+    private void logUnmappedHandlerDetails(List<Integer> failedHandlers) {
+        logger.log(Level.INFO, "=== DETAILED ANALYSIS OF UNMAPPED HANDLERS ===");
+        
+        for (Integer opcodeIndex : failedHandlers) {
+            Integer handlerIndex = vmOpcodeDispatcherMapping.get(opcodeIndex);
+            Function fn = vmHandlerMapping.get(handlerIndex);
+            Function purified = purifyHandler(fn);
+            
+            String analysis = handlerMatcher.getDetailedAnalysis(purified, opcodeIndex);
+            logger.log(Level.INFO, String.format("Analysis for failed handler at opcode %d:\n%s", opcodeIndex, analysis));
+        }
+        
+        logger.log(Level.INFO, "=== END UNMAPPED HANDLER ANALYSIS ===");
+    }
+    
+    private void verifyOpcodeCoverage() {
+        logger.log(Level.INFO, "Verifying opcode coverage for LuaChunkOptimizer requirements");
+        
+        // These are the essential VM operations needed by LuaChunkOptimizer
+        Set<VMOp> requiredOps = new HashSet<>(Arrays.asList(
+            VMOp.MOVE, VMOp.LOADK, VMOp.LOADBOOL, VMOp.LOADNIL,
+            VMOp.GETGLOBAL, VMOp.SETGLOBAL, VMOp.GETTABLE, VMOp.SETTABLE,
+            VMOp.NEWTABLE, VMOp.SELF, VMOp.ADD, VMOp.SUB, VMOp.MUL,
+            VMOp.DIV, VMOp.MOD, VMOp.POW, VMOp.UNM, VMOp.NOT, VMOp.LEN,
+            VMOp.CONCAT, VMOp.JUMP, VMOp.EQ, VMOp.LT, VMOp.LTE,
+            VMOp.TEST, VMOp.TESTSET, VMOp.CALL, VMOp.TAILCALL,
+            VMOp.RETURN, VMOp.FORLOOP, VMOp.FORPREP, VMOp.VARARG
+        ));
+        
+        Set<VMOp> mappedOps = instructionToOpcodeMapping.keySet();
+        Set<VMOp> missingOps = new HashSet<>(requiredOps);
+        missingOps.removeAll(mappedOps);
+        
+        if (!missingOps.isEmpty()) {
+            logger.log(Level.SEVERE, String.format("Missing critical opcode mappings: %s", missingOps));
+            logger.log(Level.SEVERE, "This may cause failures during LuaChunkOptimizer processing");
+        } else {
+            logger.log(Level.INFO, "All required VM operations are mapped");
+        }
+        
+        // Log coverage statistics
+        Map<String, Object> stats = handlerMatcher.getCoverageStats();
+        logger.log(Level.INFO, String.format("Handler signature coverage: %s", stats));
     }
 
     private class RenamerPass1 extends ASTOptimizerBase {
