@@ -248,12 +248,7 @@ CHARSTRING
     ;
 
 LONGSTRING
-    : '[' NESTED_STR ']'
-    ;
-
-fragment NESTED_STR
-    : '=' NESTED_STR '='
-    | '[' .*? ']'
+    : '[' '='* '[' .*? ']' '='* ']'
     ;
 
 BIN
@@ -324,17 +319,11 @@ fragment HexDigit
     ;
 
 COMMENT
-    : '--[' NESTED_STR ']' -> channel(HIDDEN)
+    : '--' '[' '='* '[' .*? ']' '='* ']' -> channel(HIDDEN)
     ;
 
 LINE_COMMENT
-    : '--'
-    (
-        | '[' '='*
-        | '[' '='* ~('='|'['|'\r'|'\n') ~('\r'|'\n')*
-        | ~('['|'\r'|'\n') ~('\r'|'\n')*
-    ) ('\r\n'|'\r'|'\n'|EOF)
-    -> channel(HIDDEN)
+    : '--' ~('\r'|'\n')* ('\r\n'|'\r'|'\n'|EOF) -> channel(HIDDEN)
     ;
 
 WS

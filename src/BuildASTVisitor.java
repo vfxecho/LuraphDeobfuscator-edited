@@ -7,13 +7,7 @@ public class BuildASTVisitor extends LuaBaseVisitor<Node> {
 
     @Override
     public Node visitChunk(LuaParser.ChunkContext ctx) {
-        System.err.println("Debug: visitChunk called");
-        Node result = visitBlock(ctx.block());
-        System.err.println("Debug: visitChunk result type: " + (result == null ? "null" : result.getClass().getName()));
-        if (result instanceof Block) {
-            System.err.println("Debug: visitChunk result stmts size: " + ((Block)result).stmts.size());
-        }
-        return result;
+        return visitBlock(ctx.block());
     }
 
     @Override
@@ -497,7 +491,6 @@ public class BuildASTVisitor extends LuaBaseVisitor<Node> {
         }
 
         if (exp == null) {
-            System.err.println("Warning: VarOrExpContext has null exp and var. Context: " + (ctx != null ? ctx.getText() : "null"));
             return new Nil();
         }
 
