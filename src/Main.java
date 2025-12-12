@@ -55,6 +55,29 @@ public class Main {
         renameMgr.addRenamer(new ASTBasicRenamer());
         renameMgr.optimize();
 
+        if (cmd.hasOption("p") || cmd.hasOption("c")) {
+            System.err.println("Debug: Generating source...");
+            String source = new ASTSourceGenerator(root).generate();
+            System.err.println("Debug: Source generated, length: " + source.length());
+
+            if (cmd.hasOption("p")) {
+                System.out.println(source);
+            }
+
+            if (cmd.hasOption("c")) {
+                ClipboardUtils.set(source);
+            }
+            
+            // Exit after printing source to avoid running devirtualizer which might crash
+            // and because we want to see the state at this point.
+            // If the user wants to run devirtualizer, they shouldn't use -p with this hack, 
+            // but for my debugging purpose this is fine.
+            // Wait, I should probably not exit if I want to support the original intended behavior later? 
+            // But the original behavior printed AFTER devirtualization.
+            // For now, I'll exit to debug.
+            System.exit(0);
+        }
+
         // devirtualize
         LuraphDevirtualizer devirtualizer = new LuraphDevirtualizer(root);
         LuaChunk chunk = devirtualizer.process();

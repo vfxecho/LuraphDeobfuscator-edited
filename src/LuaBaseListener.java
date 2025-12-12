@@ -1,3 +1,5 @@
+// Generated from grammar/Lua.g4 by ANTLR 4.8
+
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -92,6 +94,18 @@ public class LuaBaseListener implements LuaListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitStmtBreak(LuaParser.StmtBreakContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterStmtContinue(LuaParser.StmtContinueContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitStmtContinue(LuaParser.StmtContinueContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -212,6 +226,18 @@ public class LuaBaseListener implements LuaListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitStmtLocalDecl(LuaParser.StmtLocalDeclContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterStmtCompoundAssign(LuaParser.StmtCompoundAssignContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitStmtCompoundAssign(LuaParser.StmtCompoundAssignContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

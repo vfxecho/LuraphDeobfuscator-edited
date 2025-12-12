@@ -62,6 +62,7 @@ stat
     | functioncall                                                                  #stmtFuncCall
     | label                                                                         #stmtLabel
     | 'break'                                                                       #stmtBreak
+    | 'continue'                                                                    #stmtContinue
     | 'goto' NAME                                                                   #stmtGoto
     | 'do' block 'end'                                                              #stmtDo
     | 'while' exp 'do' block 'end'                                                  #stmtWhile
@@ -72,6 +73,7 @@ stat
     | 'function' funcname funcbody                                                  #stmtFuncDef
     | 'local' 'function' NAME funcbody                                              #stmtLocalFuncDef
     | 'local' namelist ('=' explist)?                                               #stmtLocalDecl
+    | varlist ( '+=' | '-=' | '*=' | '/=' | '%=' | '^=' ) explist                   #stmtCompoundAssign
     ;
 
 ifstmt
@@ -205,25 +207,25 @@ fieldsep
     ;
 
 operatorOr
-	: 'or';
+    : 'or';
 
 operatorAnd
-	: 'and';
+    : 'and';
 
 operatorComparison
-	: '<' | '>' | '<=' | '>=' | '~=' | '==';
+    : '<' | '>' | '<=' | '>=' | '~=' | '==';
 
 operatorStrcat
-	: '..';
+    : '..';
 
 operatorAddSub
-	: '+' | '-';
+    : '+' | '-';
 
 operatorMulDivMod
-	: '*' | '/' | '%' | '//';
+    : '*' | '/' | '%' | '//';
 
 operatorBitwise
-	: '&' | '|' | '~' | '<<' | '>>';
+    : '&' | '|' | '~' | '<<' | '>>';
 
 operatorUnary
     : 'not' | '#' | '-' | '~';
@@ -232,7 +234,7 @@ operatorPower
     : '^';
 
 number
-    : INT | HEX | FLOAT | HEX_FLOAT
+    : INT | HEX | FLOAT | HEX_FLOAT | BIN
     ;
 
 string
@@ -263,12 +265,16 @@ NESTED_STR
     | '[' .*? ']'
     ;
 
+BIN
+    : '0' [bB] BinDigit (BinDigit|'_')*
+    ;
+
 INT
-    : Digit+
+    : Digit (Digit|'_')*
     ;
 
 HEX
-    : '0' [xX] HexDigit+
+    : '0' [xX] HexDigit (HexDigit|'_')*
     ;
 
 FLOAT
@@ -300,6 +306,7 @@ EscapeSequence
     | DecimalEscape
     | HexEscape
     | UtfEscape
+    | '\\' .
     ;
 
 fragment
@@ -322,6 +329,11 @@ UtfEscape
 fragment
 Digit
     : [0-9]
+    ;
+
+fragment
+BinDigit
+    : [0-1]
     ;
 
 fragment

@@ -7,7 +7,13 @@ public class BuildASTVisitor extends LuaBaseVisitor<Node> {
 
     @Override
     public Node visitChunk(LuaParser.ChunkContext ctx) {
-        return visitBlock(ctx.block());
+        System.err.println("Debug: visitChunk called");
+        Node result = visitBlock(ctx.block());
+        System.err.println("Debug: visitChunk result type: " + (result == null ? "null" : result.getClass().getName()));
+        if (result instanceof Block) {
+            System.err.println("Debug: visitChunk result stmts size: " + ((Block)result).stmts.size());
+        }
+        return result;
     }
 
     @Override
@@ -66,6 +72,11 @@ public class BuildASTVisitor extends LuaBaseVisitor<Node> {
     @Override
     public Break visitStmtBreak(LuaParser.StmtBreakContext ctx) {
         return new Break();
+    }
+
+    @Override
+    public Continue visitStmtContinue(LuaParser.StmtContinueContext ctx) {
+        return new Continue();
     }
 
     @Override
@@ -474,15 +485,20 @@ public class BuildASTVisitor extends LuaBaseVisitor<Node> {
 
     @Override
     public Expression visitVarOrExp(LuaParser.VarOrExpContext ctx) {
-        Expression exp;
+        Expression exp = null;
 
         if (ctx.exp() != null) {
             // (exp)
             exp = (Expression)visit(ctx.exp());
         }
-        else {
+        else if (ctx.var() != null) {
             // var
             exp = (Expression)visit(ctx.var());
+        }
+
+        if (exp == null) {
+            System.err.println("Warning: VarOrExpContext has null exp and var. Context: " + (ctx != null ? ctx.getText() : "null"));
+            return new Nil();
         }
 
         return exp;

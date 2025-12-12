@@ -22,6 +22,11 @@ public class ASTVisitor implements IASTVisitor {
     }
 
     @Override
+    public Node visit(Continue node) {
+        return node;
+    }
+
+    @Override
     public Node visit(Do node) {
         return node;
     }

@@ -1,3 +1,4 @@
+// Generated from grammar/Lua.g4 by ANTLR 4.8
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
 /**
@@ -85,6 +86,18 @@ public interface LuaListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitStmtBreak(LuaParser.StmtBreakContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code stmtContinue}
+	 * labeled alternative in {@link LuaParser#stat}.
+	 * @param ctx the parse tree
+	 */
+	void enterStmtContinue(LuaParser.StmtContinueContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code stmtContinue}
+	 * labeled alternative in {@link LuaParser#stat}.
+	 * @param ctx the parse tree
+	 */
+	void exitStmtContinue(LuaParser.StmtContinueContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code stmtGoto}
 	 * labeled alternative in {@link LuaParser#stat}.
@@ -205,6 +218,18 @@ public interface LuaListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitStmtLocalDecl(LuaParser.StmtLocalDeclContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code stmtCompoundAssign}
+	 * labeled alternative in {@link LuaParser#stat}.
+	 * @param ctx the parse tree
+	 */
+	void enterStmtCompoundAssign(LuaParser.StmtCompoundAssignContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code stmtCompoundAssign}
+	 * labeled alternative in {@link LuaParser#stat}.
+	 * @param ctx the parse tree
+	 */
+	void exitStmtCompoundAssign(LuaParser.StmtCompoundAssignContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link LuaParser#ifstmt}.
 	 * @param ctx the parse tree
