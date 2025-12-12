@@ -38,7 +38,18 @@ public class Main {
 
         String fileName = cmd.getOptionValue("i");
 
-        String inputSource = new String(Files.readAllBytes(Paths.get(fileName)), StandardCharsets.UTF_8);
+        byte[] inputBytes = Files.readAllBytes(Paths.get(fileName));
+        if (inputBytes.length >= 4
+                && (inputBytes[0] & 0xFF) == 0x1B
+                && (inputBytes[1] & 0xFF) == 0x4C
+                && (inputBytes[2] & 0xFF) == 0x75
+                && (inputBytes[3] & 0xFF) == 0x61) {
+            System.out.println("ERROR: Input appears to be compiled Lua bytecode (.luac). This tool expects Luraph-obfuscated Lua source (.lua).\n" +
+                    "Decompile the .luac to Lua source first (e.g. unluac) and then run the devirtualizer on the resulting .lua file.");
+            System.exit(1);
+        }
+
+        String inputSource = new String(inputBytes, StandardCharsets.UTF_8);
         inputSource = LuaSourcePreprocessor.preprocess(inputSource);
 
         // generate parse tree

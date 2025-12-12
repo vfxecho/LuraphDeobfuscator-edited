@@ -10,18 +10,13 @@ OUTPUT_DIR="$PROJECT_ROOT/outputs"
 UNLUAC_JAR="$LIB_DIR/unluac.jar"
 
 # Input/Output
-INPUT_FILE="$PROJECT_ROOT/luraphtest.luac"
-FIXED_INPUT_FILE="$PROJECT_ROOT/luraphtest_fixed.luac"
+INPUT_FILE="$PROJECT_ROOT/luraphtest.lua"
 OUTPUT_LUAC="$OUTPUT_DIR/luraphtest.luac"
 OUTPUT_LUA="$OUTPUT_DIR/luraphtest.lua"
 
 # Create directories
 mkdir -p "$BIN_DIR"
 mkdir -p "$OUTPUT_DIR"
-
-# Fix input file (insert newline after comment)
-echo "Fixing input file..."
-sed 's/\] return/] \nreturn/' "$INPUT_FILE" > "$FIXED_INPUT_FILE"
 
 echo "Compiling Java sources..."
 javac -d "$BIN_DIR" -cp "$LIB_DIR/*" $(find "$SRC_DIR" -name "*.java")
@@ -33,9 +28,9 @@ if [ -f "$OUTPUT_LUAC" ]; then
 fi
 
 # Generate source dump for debugging
-java -cp "$LIB_DIR/*:$BIN_DIR" Main -i "$FIXED_INPUT_FILE" -p > "$OUTPUT_DIR/source_dump.lua"
+java -cp "$LIB_DIR/*:$BIN_DIR" Main -i "$INPUT_FILE" -p > "$OUTPUT_DIR/source_dump.lua"
 
-java -cp "$LIB_DIR/*:$BIN_DIR" Main -i "$FIXED_INPUT_FILE" -o "$OUTPUT_LUAC"
+java -cp "$LIB_DIR/*:$BIN_DIR" Main -i "$INPUT_FILE" -o "$OUTPUT_LUAC"
 
 if [ -f "$UNLUAC_JAR" ]; then
     echo "Decompiling with unluac..."

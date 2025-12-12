@@ -204,14 +204,14 @@ The `LuacGenerator` class writes standard Lua 5.1 bytecode (`.luac`) format:
 - **Variable-length encoding** for strings with null terminators
 - **Type-tagged constants** with appropriate serialization
 
-## Processing Flow Example: luraphtest.luac
+## Processing Flow Example: luraphtest.lua
 
-Let's trace how `luraphtest.luac` flows through the pipeline:
+Let's trace how `luraphtest.lua` flows through the pipeline:
 
 ### Input Processing
 
 ```bash
-java -jar LuraphDevirtualizer.jar -i luraphtest.luac -p -o output.luac
+java -jar LuraphDevirtualizer.jar -i luraphtest.lua -p -o output.luac
 ```
 
 ### Stage-by-Stage Flow
