@@ -8,9 +8,18 @@ import java.nio.file.Paths;
 
 public class DecodeChunkMetadataSmokeTest {
     public static void main(String[] args) throws Exception {
-        String fileName = args.length > 0 ? args[0] : "luraphtest.luac";
+        String fileName = args.length > 0 ? args[0] : "luraphtest.lua";
 
-        String inputSource = new String(Files.readAllBytes(Paths.get(fileName)), StandardCharsets.UTF_8);
+        byte[] inputBytes = Files.readAllBytes(Paths.get(fileName));
+        if (inputBytes.length >= 4
+                && (inputBytes[0] & 0xFF) == 0x1B
+                && (inputBytes[1] & 0xFF) == 0x4C
+                && (inputBytes[2] & 0xFF) == 0x75
+                && (inputBytes[3] & 0xFF) == 0x61) {
+            throw new IllegalArgumentException("Input appears to be compiled Lua bytecode (.luac). Provide Luraph-obfuscated Lua source instead.");
+        }
+
+        String inputSource = new String(inputBytes, StandardCharsets.UTF_8);
         inputSource = LuaSourcePreprocessor.preprocess(inputSource);
 
         LuaLexer lexer = new LuaLexer(CharStreams.fromString(inputSource, fileName));
