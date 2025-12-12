@@ -1,3 +1,4 @@
+// Generated from grammar/Lua.g4 by ANTLR 4.8
 import org.antlr.v4.runtime.atn.*;
 import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.*;
@@ -23,8 +24,8 @@ public class LuaParser extends Parser {
 		T__38=39, T__39=40, T__40=41, T__41=42, T__42=43, T__43=44, T__44=45, 
 		T__45=46, T__46=47, T__47=48, T__48=49, T__49=50, T__50=51, T__51=52, 
 		T__52=53, T__53=54, T__54=55, NAME=56, NORMALSTRING=57, CHARSTRING=58, 
-		LONGSTRING=59, INT=60, HEX=61, FLOAT=62, HEX_FLOAT=63, COMMENT=64, LINE_COMMENT=65, 
-		WS=66, SHEBANG=67;
+		LONGSTRING=59, BIN=60, HEX_FLOAT=61, HEX=62, FLOAT=63, INT=64, COMMENT=65, 
+		LINE_COMMENT=66, WS=67, SHEBANG=68;
 	public static final int
 		RULE_chunk = 0, RULE_block = 1, RULE_stat = 2, RULE_ifstmt = 3, RULE_elseifstmt = 4, 
 		RULE_elsestmt = 5, RULE_retstat = 6, RULE_label = 7, RULE_funcname = 8, 
@@ -68,8 +69,8 @@ public class LuaParser extends Parser {
 			null, null, null, null, null, null, null, null, null, null, null, null, 
 			null, null, null, null, null, null, null, null, null, null, null, null, 
 			null, null, null, null, null, null, null, null, "NAME", "NORMALSTRING", 
-			"CHARSTRING", "LONGSTRING", "INT", "HEX", "FLOAT", "HEX_FLOAT", "COMMENT", 
-			"LINE_COMMENT", "WS", "SHEBANG"
+			"CHARSTRING", "LONGSTRING", "BIN", "HEX_FLOAT", "HEX", "FLOAT", "INT", 
+			"COMMENT", "LINE_COMMENT", "WS", "SHEBANG"
 		};
 	}
 	private static final String[] _SYMBOLIC_NAMES = makeSymbolicNames();
@@ -1017,7 +1018,7 @@ public class LuaParser extends Parser {
 			setState(177);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__12) | (1L << T__22) | (1L << T__23) | (1L << T__24) | (1L << T__25) | (1L << T__26) | (1L << T__30) | (1L << T__42) | (1L << T__49) | (1L << T__52) | (1L << T__53) | (1L << NAME) | (1L << NORMALSTRING) | (1L << CHARSTRING) | (1L << LONGSTRING) | (1L << INT) | (1L << HEX) | (1L << FLOAT) | (1L << HEX_FLOAT))) != 0)) {
+			if (((((_la - 13)) & ~0x3f) == 0 && ((1L << (_la - 13)) & ((1L << (T__12 - 13)) | (1L << (T__22 - 13)) | (1L << (T__23 - 13)) | (1L << (T__24 - 13)) | (1L << (T__25 - 13)) | (1L << (T__26 - 13)) | (1L << (T__30 - 13)) | (1L << (T__42 - 13)) | (1L << (T__49 - 13)) | (1L << (T__52 - 13)) | (1L << (T__53 - 13)) | (1L << (NAME - 13)) | (1L << (NORMALSTRING - 13)) | (1L << (CHARSTRING - 13)) | (1L << (LONGSTRING - 13)) | (1L << (BIN - 13)) | (1L << (HEX_FLOAT - 13)) | (1L << (HEX - 13)) | (1L << (FLOAT - 13)) | (1L << (INT - 13)))) != 0)) {
 				{
 				setState(176);
 				explist();
@@ -1798,10 +1799,11 @@ public class LuaParser extends Parser {
 				match(T__24);
 				}
 				break;
-			case INT:
+			case BIN:
+			case HEX_FLOAT:
 			case HEX:
 			case FLOAT:
-			case HEX_FLOAT:
+			case INT:
 				{
 				_localctx = new ExpNumberContext(_localctx);
 				_ctx = _localctx;
@@ -2486,7 +2488,7 @@ public class LuaParser extends Parser {
 				setState(330);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
-				if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__12) | (1L << T__22) | (1L << T__23) | (1L << T__24) | (1L << T__25) | (1L << T__26) | (1L << T__30) | (1L << T__42) | (1L << T__49) | (1L << T__52) | (1L << T__53) | (1L << NAME) | (1L << NORMALSTRING) | (1L << CHARSTRING) | (1L << LONGSTRING) | (1L << INT) | (1L << HEX) | (1L << FLOAT) | (1L << HEX_FLOAT))) != 0)) {
+				if (((((_la - 13)) & ~0x3f) == 0 && ((1L << (_la - 13)) & ((1L << (T__12 - 13)) | (1L << (T__22 - 13)) | (1L << (T__23 - 13)) | (1L << (T__24 - 13)) | (1L << (T__25 - 13)) | (1L << (T__26 - 13)) | (1L << (T__30 - 13)) | (1L << (T__42 - 13)) | (1L << (T__49 - 13)) | (1L << (T__52 - 13)) | (1L << (T__53 - 13)) | (1L << (NAME - 13)) | (1L << (NORMALSTRING - 13)) | (1L << (CHARSTRING - 13)) | (1L << (LONGSTRING - 13)) | (1L << (BIN - 13)) | (1L << (HEX_FLOAT - 13)) | (1L << (HEX - 13)) | (1L << (FLOAT - 13)) | (1L << (INT - 13)))) != 0)) {
 					{
 					setState(329);
 					explist();
@@ -2745,7 +2747,7 @@ public class LuaParser extends Parser {
 			setState(358);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << T__12) | (1L << T__22) | (1L << T__23) | (1L << T__24) | (1L << T__25) | (1L << T__26) | (1L << T__28) | (1L << T__30) | (1L << T__42) | (1L << T__49) | (1L << T__52) | (1L << T__53) | (1L << NAME) | (1L << NORMALSTRING) | (1L << CHARSTRING) | (1L << LONGSTRING) | (1L << INT) | (1L << HEX) | (1L << FLOAT) | (1L << HEX_FLOAT))) != 0)) {
+			if (((((_la - 13)) & ~0x3f) == 0 && ((1L << (_la - 13)) & ((1L << (T__12 - 13)) | (1L << (T__22 - 13)) | (1L << (T__23 - 13)) | (1L << (T__24 - 13)) | (1L << (T__25 - 13)) | (1L << (T__26 - 13)) | (1L << (T__28 - 13)) | (1L << (T__30 - 13)) | (1L << (T__42 - 13)) | (1L << (T__49 - 13)) | (1L << (T__52 - 13)) | (1L << (T__53 - 13)) | (1L << (NAME - 13)) | (1L << (NORMALSTRING - 13)) | (1L << (CHARSTRING - 13)) | (1L << (LONGSTRING - 13)) | (1L << (BIN - 13)) | (1L << (HEX_FLOAT - 13)) | (1L << (HEX - 13)) | (1L << (FLOAT - 13)) | (1L << (INT - 13)))) != 0)) {
 				{
 				setState(357);
 				fieldlist();
@@ -3396,6 +3398,7 @@ public class LuaParser extends Parser {
 
 	public static class NumberContext extends ParserRuleContext {
 		public TerminalNode INT() { return getToken(LuaParser.INT, 0); }
+		public TerminalNode BIN() { return getToken(LuaParser.BIN, 0); }
 		public TerminalNode HEX() { return getToken(LuaParser.HEX, 0); }
 		public TerminalNode FLOAT() { return getToken(LuaParser.FLOAT, 0); }
 		public TerminalNode HEX_FLOAT() { return getToken(LuaParser.HEX_FLOAT, 0); }
@@ -3427,7 +3430,7 @@ public class LuaParser extends Parser {
 			{
 			setState(406);
 			_la = _input.LA(1);
-			if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & ((1L << INT) | (1L << HEX) | (1L << FLOAT) | (1L << HEX_FLOAT))) != 0)) ) {
+			if ( !(((((_la - 60)) & ~0x3f) == 0 && ((1L << (_la - 60)) & ((1L << (BIN - 60)) | (1L << (HEX_FLOAT - 60)) | (1L << (HEX - 60)) | (1L << (FLOAT - 60)) | (1L << (INT - 60)))) != 0)) ) {
 			_errHandler.recoverInline(this);
 			}
 			else {
@@ -3531,7 +3534,7 @@ public class LuaParser extends Parser {
 	}
 
 	public static final String _serializedATN =
-		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3E\u019d\4\2\t\2\4"+
+		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3F\u019d\4\2\t\2\4"+
 		"\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7\4\b\t\b\4\t\t\t\4\n\t\n\4\13\t"+
 		"\13\4\f\t\f\4\r\t\r\4\16\t\16\4\17\t\17\4\20\t\20\4\21\t\21\4\22\t\22"+
 		"\4\23\t\23\4\24\t\24\4\25\t\25\4\26\t\26\4\27\t\27\4\30\t\30\4\31\t\31"+
@@ -3564,7 +3567,7 @@ public class LuaParser extends Parser {
 		"\3\36\3\37\3\37\3 \3 \3!\3!\3\"\3\"\3#\3#\3$\3$\3%\3%\3&\3&\3\'\3\'\3"+
 		"\'\2\3\32(\2\4\6\b\n\f\16\20\22\24\26\30\32\34\36 \"$&(*,.\60\62\64\66"+
 		"8:<>@BDFHJL\2\n\4\2\3\3\r\r\3\2%*\3\2,-\3\2.\61\3\2\62\66\5\2--\64\64"+
-		"\678\3\2>A\3\2;=\2\u01b5\2N\3\2\2\2\4T\3\2\2\2\6\u009c\3\2\2\2\b\u009e"+
+		"\678\3\2>B\3\2;=\2\u01b5\2N\3\2\2\2\4T\3\2\2\2\6\u009c\3\2\2\2\b\u009e"+
 		"\3\2\2\2\n\u00aa\3\2\2\2\f\u00af\3\2\2\2\16\u00b1\3\2\2\2\20\u00b8\3\2"+
 		"\2\2\22\u00bc\3\2\2\2\24\u00c8\3\2\2\2\26\u00d0\3\2\2\2\30\u00d8\3\2\2"+
 		"\2\32\u00ed\3\2\2\2\34\u0114\3\2\2\2\36\u011b\3\2\2\2 \u0126\3\2\2\2\""+
